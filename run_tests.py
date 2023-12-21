@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from agents import Households, Government
 
-plt.ioff()
-
 # Initialize the Adaptation Model with 50 household agents.
 model = AdaptationModel(number_of_households=50, flood_map_choice="harvey", network="watts_strogatz") # flood_map_choice can be "harvey", "100yr", or "500yr"
 
@@ -42,7 +40,7 @@ model.plot_model_domain_with_agents()
 # Plot the initial state of the social network.
 fig, ax = plt.subplots(figsize=(7, 7))
 plot_network(ax, model)
-plt.show()
+#plt.show()
 
 # Run the model for 20 steps and generate plots every 5 steps.
 for step in range(20):
@@ -58,7 +56,7 @@ for step in range(20):
         # Plot for the social network showing connections and adaptation statuses.
         fig, ax = plt.subplots(figsize=(7, 7))
         plot_network(ax, model)
-        plt.show()
+        #plt.show()
 
 agent_data = model.datacollector.get_agent_vars_dataframe()
 print(agent_data)

@@ -82,7 +82,7 @@ class AdaptationModel(Model):
             self.grid.place_agent(agent=household, node_id=node)
 
         # initialise government agent
-        government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare)
+        government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare, political_situation=self.political_situation)
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
         self.schedule.add(government)
@@ -190,7 +190,23 @@ class AdaptationModel(Model):
         plt.title(f'Model Domain with Agents at Step {self.schedule.steps}')
         plt.xlabel('Longitude')
         plt.ylabel('Latitude')
-        plt.show()
+        #plt.show()
+
+    def determine_average_political_perception_households(self):
+        #function used to determine the average political perception of the households
+        #this function is called in the step of government to be used to determine the government their new political perception
+
+        #reset value
+        self.average_political_perception_households = 0
+
+        # loop through all agents
+        for agent in self.schedule.agents:
+            #only execute code for households
+            if type(agent) == Households:
+                #sum all political perceptions
+                self.average_political_perception_households = self.average_political_perception_households + agent.political_perception
+        #return the average political perception by dividing by the total number of households
+        return self.average_political_perception_households/self.number_of_households
 
     def step(self):
         """

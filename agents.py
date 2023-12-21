@@ -3,6 +3,7 @@ import random
 from mesa import Agent
 from shapely.geometry import Point
 from shapely import contains_xy
+#from model import AdaptationModel
 
 # Import functions from functions.py
 from functions import generate_random_location_within_map_domain, get_flood_depth, calculate_basic_flood_damage, floodplain_multipolygon
@@ -89,7 +90,7 @@ class Households(Agent):
             self.friends_political_perceptions_neighbours.append(self.friends[friend].political_perception)
 
         #compute average poliitcal perception of neighbours
-        self.average_political_perception = sum(self.friends_political_perceptions_neighbours)/len(self.friends)
+        self.average_political_perception_neighbours = sum(self.friends_political_perceptions_neighbours)/len(self.friends)
 
         #compute new value for political perception based upon own political peeception and the average political perception of neighbours
         self.political_perception = 0.3*self.political_perception + 0.7*self.average_political_perception_neighbours
@@ -100,10 +101,16 @@ class Government(Agent):
     A government agent that currently doesn't perform any actions.
     """
 
-    def __init__(self, unique_id, model, welfare):
+    def __init__(self, unique_id, model, welfare, political_situation):
         super().__init__(unique_id, model)
         # uitwerken
         # budget = welfare
+
+        #import all functions of the model to be able to use them in Government
+        self.main_model = model
+
+        #initialise political perception of the government using the political situation
+        self.political_perception_government = political_situation
 
     #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
     def count_friends(self, radius):
@@ -113,8 +120,15 @@ class Government(Agent):
         return len(friends)
 
     def step(self):
-        # The government agent doesn't perform any actions.
-        pass
+        # Compute average political perception among households, to determine the new political perception of the government
+        self.average_political_perception_households = self.main_model.determine_average_political_perception_households()
+        self.political_perception_government = 0.5*self.political_perception_government + 0.5*self.average_political_perception_households
+
+        #keep political perception value between bounds, 0 and 1
+        if self.political_perception_government > 1:
+            self.political_perception_government = 1
+        elif self.political_perception_government < 0
+            self.political_perception_government = 0
 
 # More agent classes can be added here, e.g. for insurance agents.
 
