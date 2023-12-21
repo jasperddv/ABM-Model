@@ -97,14 +97,10 @@ class Households(Agent):
 
 # Define the Government agent class
 class Government(Agent):
-    """
-    A government agent that currently doesn't perform any actions.
-    """
-
     def __init__(self, unique_id, model, welfare, political_situation):
         super().__init__(unique_id, model)
-        # uitwerken
-        # budget = welfare
+        # initialise welfare in the country
+        self.welfare = welfare
 
         #import all functions of the model to be able to use them in Government
         self.main_model = model
@@ -120,6 +116,9 @@ class Government(Agent):
         return len(friends)
 
     def step(self):
+        # randomly determine if a protest takes place this step, value 0 or 1
+        self.protest = random.randint(0,1)
+
         # Compute average political perception among households, to determine the new political perception of the government
         self.average_political_perception_households = self.main_model.determine_average_political_perception_households()
         self.political_perception_government = 0.5*self.political_perception_government + 0.5*self.average_political_perception_households
@@ -127,8 +126,40 @@ class Government(Agent):
         #keep political perception value between bounds, 0 and 1
         if self.political_perception_government > 1:
             self.political_perception_government = 1
-        elif self.political_perception_government < 0
+        elif self.political_perception_government < 0:
             self.political_perception_government = 0
 
-# More agent classes can be added here, e.g. for insurance agents.
+        # determine government budget based upon welfare and political perception of the government
+        self.government_budget = 0.6*self.welfare + 1.4*self.political_perception_government
+
+# Define the Waterboard agent class
+class Waterboard(Agent):
+    def __init__(self, unique_id, model, welfare, political_situation):
+        super().__init__(unique_id, model)
+
+        # Add an attribute for the actual flood depth. This is set to zero at the beginning of the simulation since there is not flood yet
+        # and will update its value when there is a shock (i.e., actual flood). Shock happens at some point during the simulation
+        self.flood_depth_actual = 0
+
+        # calculate the actual flood damage given the actual flood depth. Flood damage is a factor between 0 and 1
+        self.flood_damage_actual = calculate_basic_flood_damage(flood_depth=self.flood_depth_actual)
+
+        #create list that contains flood damage over the past years, used to create household attitude
+        self.past_flood_damages = [0, 0, 0, 0]
+        self.past_flood_damages.append(self.flood_damage_actual)
+
+    #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
+    def count_friends(self, radius):
+        """Count the number of neighbors within a given radius (number of edges away). This is social relation and not spatial"""
+        #Empty list, waterboard has no friends
+        friends = []
+        return len(friends)
+
+    def step(self):
+        #append past_flood_damages list with the new actual flood damage
+        self.past_flood_damages.append(self.flood_damage_actual)
+
+        #determine attitude of waterboard based upon past flood damages. The waterboard always has an attitude of at least 0.5
+        self.waterboard_attitude = (5 + sum(self.past_flood_damages[-5:])) / 10
+
 

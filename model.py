@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import random
 
 # Import the agent class(es) from agents.py
-from agents import Households, Government
+from agents import Households, Government, Waterboard
 
 # Import functions from functions.py
 from functions import get_flood_map_data, calculate_basic_flood_damage
@@ -83,6 +83,11 @@ class AdaptationModel(Model):
 
         # initialise government agent
         government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare, political_situation=self.political_situation)
+
+        # initialise waterboard agent
+        waterboard = Waterboard(unique_id=self.unique_id_counter, model=self, welfare=self.welfare,
+                                political_situation=self.political_situation)
+
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
         self.schedule.add(government)
