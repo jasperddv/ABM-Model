@@ -1,7 +1,7 @@
 from model import AdaptationModel
 import matplotlib.pyplot as plt
 import networkx as nx
-from agents import Households, Government, Waterboard
+from agents import Households, Government, Waterboard, Insurance_company
 
 # Initialize the Adaptation Model with 50 household agents.
 model = AdaptationModel(number_of_households=50, flood_map_choice="harvey", network="watts_strogatz") # flood_map_choice can be "harvey", "100yr", or "500yr"

@@ -17,10 +17,13 @@ class Households(Agent):
     In a real scenario, this would be based on actual geographical data or more complex logic.
     """
 
-    def __init__(self, unique_id, model, political_situation):
+    def __init__(self, unique_id, model, political_situation, welfare):
         super().__init__(unique_id, model)
         # Initial adaptation status set to False, determines whether an agent is going to adapt and the colour of the agent on the map
         self.is_adapted = False
+
+        # set welfare value
+        self.welfare = welfare
 
         #initalise attitude to 0
         self.household_attitude = 0
@@ -84,6 +87,9 @@ class Households(Agent):
         #compute household attitude using the average value of the last 5 values past_flood_damages list
         self.household_attitude = sum(self.past_flood_damages[-5:])/5
 
+        #determine savings of household
+        self.savings_household = 2000 + self.welfare*1000*random.randint(0,10)
+
         #create list with political perception of neighbours
         self.friends_political_perceptions_neighbours = []
         for friend in range(len(self.friends)):
@@ -115,27 +121,38 @@ class Government(Agent):
         friends = []
         return len(friends)
 
-    def step(self):
-        # randomly determine if a protest takes place this step, value 0 or 1
-        self.protest = random.randint(0,1)
-
-        # Compute average political perception among households, to determine the new political perception of the government
-        self.average_political_perception_households = self.main_model.determine_average_political_perception_households()
-        self.political_perception_government = 0.5*self.political_perception_government + 0.5*self.average_political_perception_households
+    def determine_political_perception_government(self, political_perception_government, average_political_perception_households):
+        # Determine the new political perception of the government
+        political_perception_government = (0.5*political_perception_government + 0.5*average_political_perception_households)
 
         #keep political perception value between bounds, 0 and 1
-        if self.political_perception_government > 1:
-            self.political_perception_government = 1
-        elif self.political_perception_government < 0:
-            self.political_perception_government = 0
+        if political_perception_government > 1:
+            political_perception_government = 1
+        elif political_perception_government < 0:
+            political_perception_government = 0
+
+        return political_perception_government
+
+    def step(self):
+        #Compute average political perception among households,
+        self.average_political_perception_households = self.main_model.determine_average_political_perception_households()
+
+        # Determine the new political perception of the government
+        self.political_perception_government = self.determine_political_perception_government(self.political_perception_government, self.average_political_perception_households)
 
         # determine government budget based upon welfare and political perception of the government
         self.government_budget = 0.6*self.welfare + 1.4*self.political_perception_government
+
+        # determine whether government uses a warning system
+        self.warning_system = self.main_model.provide_information*3 + self.main_model.regulation*2
 
 # Define the Waterboard agent class
 class Waterboard(Agent):
     def __init__(self, unique_id, model, welfare, political_situation):
         super().__init__(unique_id, model)
+
+        #import all functions of the model to be able to use them in Insurance company
+        self.main_model = model
 
         # Add an attribute for the actual flood depth. This is set to zero at the beginning of the simulation since there is not flood yet
         # and will update its value when there is a shock (i.e., actual flood). Shock happens at some point during the simulation
@@ -162,4 +179,34 @@ class Waterboard(Agent):
         #determine attitude of waterboard based upon past flood damages. The waterboard always has an attitude of at least 0.5
         self.waterboard_attitude = (5 + sum(self.past_flood_damages[-5:])) / 10
 
+        #determine waterboard measure taken
+        self.adaptation_on_rivers_and_drainages = self.main_model.provide_information + 3*self.main_model.regulation + 3*self.waterboard_attitude
 
+# Define the Insurance company agent class
+class Insurance_company(Agent):
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+
+        #import all functions of the model to be able to use them in Insurance company
+        self.main_model = model
+
+    #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
+    def count_friends(self, radius):
+        """Count the number of neighbors within a given radius (number of edges away). This is social relation and not spatial"""
+        #Empty list, insurance company has no friends
+        friends = []
+        return len(friends)
+
+    def determine_willingness_to_provide_insurance(self, household):
+        #function to determine if a household is allowed to get an insurance or not
+        self.total_policy_value = self.main_model.provide_information + self.main_model.subsidies + self.main_model.regulation + self.main_model.infrastructure_government
+        if self.total_policy_value > 2 and household.flood_damage_estimated < 0.6:
+            return 1
+        else:
+            return 0
+
+    def step(self):
+        #determine and store willingness to provide insurance per household??
+
+        #determine if insurance_company uses media platform for advertisements
+        self.media_platform_usage = random.randint(0,1)

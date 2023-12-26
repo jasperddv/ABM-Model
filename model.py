@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import random
 
 # Import the agent class(es) from agents.py
-from agents import Households, Government, Waterboard
+from agents import Households, Government, Waterboard, Insurance_company
 
 # Import functions from functions.py
 from functions import get_flood_map_data, calculate_basic_flood_damage
@@ -75,7 +75,7 @@ class AdaptationModel(Model):
 
         # create households through initiating a household on each node of the network graph
         for i, node in enumerate(self.G.nodes()):
-            household = Households(unique_id=self.unique_id_counter, model=self, political_situation=self.political_situation)
+            household = Households(unique_id=self.unique_id_counter, model=self, political_situation=self.political_situation, welfare = self.welfare)
             # unique id counter +1 to ensure unique id for next agent created
             self.unique_id_counter = self.unique_id_counter + 1
             self.schedule.add(household)
@@ -87,6 +87,9 @@ class AdaptationModel(Model):
         # initialise waterboard agent
         waterboard = Waterboard(unique_id=self.unique_id_counter, model=self, welfare=self.welfare,
                                 political_situation=self.political_situation)
+
+        # initialise insurance_company agent
+        insurance_company = Insurance_company(unique_id=self.unique_id_counter, model=self)
 
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
@@ -113,6 +116,13 @@ class AdaptationModel(Model):
                         }
         #set up the data collector 
         self.datacollector = DataCollector(model_reporters=model_metrics, agent_reporters=agent_metrics)
+
+        #initialise policy values
+        self.provide_information = 0.5
+        self.subsidies = 0.5
+        self.regulation = 0.5
+        self.infrastructure_government = 0.5
+
             
 
     def initialize_network(self):
@@ -231,7 +241,29 @@ class AdaptationModel(Model):
                     agent.flood_depth_actual = random.uniform(0.5, 1.2) * agent.flood_depth_estimated
                     # calculate the actual flood damage given the actual flood depth
                     agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual)
-        
+
+        # randomly determine if a protest takes place this step, value 0 or 1
+        self.protest = random.randint(0,1)
+
         # Collect data and advance the model by one step
         self.datacollector.collect(self)
         self.schedule.step()
+
+        # determine new policy values
+        for agent in self.schedule.agents:
+            #only execute code for households
+            if type(agent) == Government:
+                #sum all political perceptions
+                self.political_perception_government = agent.political_perception_government
+                self.government_budget = agent.government_budget
+            if type(agent) == Waterboard:
+                self.waterboard_attitude = agent.waterboard_attitude
+
+        self.provide_information = (self.provide_information + 0.1*self.government_budget +
+                                    0.3*self.political_perception_government + 0.2*self.waterboard_attitude + 0.1*self.protest)/1.7
+        self.subsidies = self.government_budget*(self.subsidies + 0.3*self.political_perception_government +
+                                                 0.2*self.waterboard_attitude + self.protest)
+        self.regulation = (self.regulation + 0.05*self.government_budget + 0.2*self.political_perception_government +
+                           0.05*self.waterboard_attitude + 0.1*self.protest)/1.4
+        self.infrastructure_government = (self.infrastructure_government + 0.4*self.government_budget +
+                                          0.3*self.political_perception_government + 0.2*self.waterboard_attitude)/1.9
