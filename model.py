@@ -83,20 +83,22 @@ class AdaptationModel(Model):
 
         # initialise government agent
         government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare, political_situation=self.political_situation)
+        self.schedule.add(government)
+        # unique id counter +1 to ensure unique id for next agent created
+        self.unique_id_counter = self.unique_id_counter + 1
 
         # initialise waterboard agent
         waterboard = Waterboard(unique_id=self.unique_id_counter, model=self, welfare=self.welfare,
                                 political_situation=self.political_situation)
+        self.schedule.add(waterboard)
+        # unique id counter +1 to ensure unique id for next agent created
+        self.unique_id_counter = self.unique_id_counter + 1
 
         # initialise insurance_company agent
         insurance_company = Insurance_company(unique_id=self.unique_id_counter, model=self)
-
+        self.schedule.add(insurance_company)
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
-        self.schedule.add(government)
-
-
-        # You might want to create other agents here, e.g. insurance agents.
 
         # Data collection setup to collect data
         model_metrics = {

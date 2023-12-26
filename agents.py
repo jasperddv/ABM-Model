@@ -19,6 +19,10 @@ class Households(Agent):
 
     def __init__(self, unique_id, model, political_situation, welfare):
         super().__init__(unique_id, model)
+
+        #import all functions of the model to be able to use them in Government
+        self.main_model = model
+
         # Initial adaptation status set to False, determines whether an agent is going to adapt and the colour of the agent on the map
         self.is_adapted = False
 
@@ -100,6 +104,28 @@ class Households(Agent):
 
         #compute new value for political perception based upon own political peeception and the average political perception of neighbours
         self.political_perception = 0.3*self.political_perception + 0.7*self.average_political_perception_neighbours
+
+        #insurance willingness
+        #insurance media activity
+        for agent in self.main_model.schedule.agents:
+            # only execute code for insurance company
+            if type(agent) == Insurance_company:
+                self.insurance_willingness = agent.determine_willingness_to_provide_insurance(self)
+                self.insurance_company_media_platform_usage = agent.media_platform_usage
+
+        #determine if this household takes an insurance of this time period
+        self.insurance_taken_by_household = (0.3*self.main_model.subsidies + 0.3*self.insurance_willingness +
+                                             0.3*self.insurance_company_media_platform_usage + 0.5*self.main_model.infrastructure_government +
+                                             0.1*self.savings_household/1000 + 0.3*self.household_attitude)
+        if self.insurance_taken_by_household < 1.5:
+            self.insurance_taken_by_household = 0
+        else:
+            self.insurance_taken_by_household = 1
+
+        #determine sandbags placed by household
+        self.sandbags_placed = (2*self.main_model.provide_information + 3*self.main_model.subsidies + 2*self.main_model.regulation -
+                                5*self.main_model.infrastructure_government - 3*self.insurance_taken_by_household +
+                                1*self.savings_household/1000 + 3*self.household_attitude)
 
 # Define the Government agent class
 class Government(Agent):
@@ -189,6 +215,9 @@ class Insurance_company(Agent):
 
         #import all functions of the model to be able to use them in Insurance company
         self.main_model = model
+
+        #initialise media platform usage
+        self.media_platform_usage = random.randint(0, 1)
 
     #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
     def count_friends(self, radius):
