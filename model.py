@@ -82,21 +82,21 @@ class AdaptationModel(Model):
             self.grid.place_agent(agent=household, node_id=node)
 
         # initialise government agent
-        government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare, political_situation=self.political_situation)
-        self.schedule.add(government)
+        self.government = Government(unique_id=self.unique_id_counter, model=self, welfare=self.welfare, political_situation=self.political_situation)
+        self.schedule.add(self.government)
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
 
         # initialise waterboard agent
-        waterboard = Waterboard(unique_id=self.unique_id_counter, model=self, welfare=self.welfare,
+        self.waterboard = Waterboard(unique_id=self.unique_id_counter, model=self, welfare=self.welfare,
                                 political_situation=self.political_situation)
-        self.schedule.add(waterboard)
+        self.schedule.add(self.waterboard)
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
 
         # initialise insurance_company agent
-        insurance_company = Insurance_company(unique_id=self.unique_id_counter, model=self)
-        self.schedule.add(insurance_company)
+        self.insurance_company = Insurance_company(unique_id=self.unique_id_counter, model=self)
+        self.schedule.add(self.insurance_company)
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
 
@@ -235,6 +235,15 @@ class AdaptationModel(Model):
         assume local flooding instead of global flooding). The actual flood depth can be 
         estimated differently
         """
+        #print(self.waterboard.adaptation_on_rivers_and_drainages)
+###     for agent in self.schedule.agents:
+            #only execute code for households
+            #if type(agent) == Government:
+                #sum all political perceptions
+            #    self.political_perception_government = agent.political_perception_government
+            #    self.government_budget = agent.government_budget
+            #if type(agent) == Waterboard:
+            #    self.waterboard_adaptation = agent.adaptation_on_rivers_and_drainages
         if self.schedule.steps == 5:
             for agent in self.schedule.agents:
                 # only execute code for households
@@ -242,7 +251,8 @@ class AdaptationModel(Model):
                     # Calculate the actual flood depth as a random number between 0.5 and 1.2 times the estimated flood depth
                     agent.flood_depth_actual = random.uniform(0.5, 1.2) * agent.flood_depth_estimated
                     # calculate the actual flood damage given the actual flood depth
-                    agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual)
+                    agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual, agent.sandbags_placed, self.waterboard.waterboard_adaptation,
+                                                                             self.government.warning_system, self.infrastructure_government)
 
         # randomly determine if a protest takes place this step, value 0 or 1
         self.protest = random.randint(0,1)
@@ -252,6 +262,7 @@ class AdaptationModel(Model):
         self.schedule.step()
 
         # determine new policy values
+        '''
         for agent in self.schedule.agents:
             #only execute code for households
             if type(agent) == Government:
@@ -259,13 +270,13 @@ class AdaptationModel(Model):
                 self.political_perception_government = agent.political_perception_government
                 self.government_budget = agent.government_budget
             if type(agent) == Waterboard:
-                self.waterboard_attitude = agent.waterboard_attitude
+                self.waterboard_attitude = agent.waterboard_attitude'''
 
-        self.provide_information = (self.provide_information + 0.1*self.government_budget +
-                                    0.3*self.political_perception_government + 0.2*self.waterboard_attitude + 0.1*self.protest)/1.7
-        self.subsidies = self.government_budget*(self.subsidies + 0.3*self.political_perception_government +
-                                                 0.2*self.waterboard_attitude + self.protest)
-        self.regulation = (self.regulation + 0.05*self.government_budget + 0.2*self.political_perception_government +
-                           0.05*self.waterboard_attitude + 0.1*self.protest)/1.4
-        self.infrastructure_government = (self.infrastructure_government + 0.4*self.government_budget +
-                                          0.3*self.political_perception_government + 0.2*self.waterboard_attitude)/1.9
+        self.provide_information = (self.provide_information + 0.1*self.government.government_budget +
+                                    0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.7
+        self.subsidies = self.government.government_budget*(self.subsidies + 0.3*self.government.political_perception_government +
+                                                 0.2*self.waterboard.waterboard_attitude + self.protest)
+        self.regulation = (self.regulation + 0.05*self.government.government_budget + 0.2*self.government.political_perception_government +
+                           0.05*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.4
+        self.infrastructure_government = (self.infrastructure_government + 0.4*self.government.government_budget +
+                                          0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude)/1.9
