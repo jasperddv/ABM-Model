@@ -1,7 +1,7 @@
 # Importing necessary libraries
 import networkx as nx
 from mesa import Model, Agent
-from mesa.time import RandomActivation
+from mesa.time import SimultaneousActivation
 from mesa.space import NetworkGrid
 from mesa.datacollection import DataCollector
 import geopandas as gpd
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import random
 
 # Import the agent class(es) from agents.py
-from agents import Households, Government, Waterboard, Insurance_company
+from agents import Households, Government, Waterboard, Insurance_company, Policy_maker
 
 # Import functions from functions.py
 from functions import get_flood_map_data, calculate_basic_flood_damage
@@ -65,7 +65,7 @@ class AdaptationModel(Model):
         self.initialize_maps(flood_map_choice)
 
         # set schedule for agents
-        self.schedule = RandomActivation(self)  # Schedule for activating agents
+        self.schedule = SimultaneousActivation(self)  # Schedule for activating agents
 
         # generate random value between 0 and 1 for political situation
         self.political_situation = random.random()
@@ -100,6 +100,10 @@ class AdaptationModel(Model):
         # unique id counter +1 to ensure unique id for next agent created
         self.unique_id_counter = self.unique_id_counter + 1
 
+        # initialise policy_maker agent
+        self.policy_maker = Policy_maker(unique_id=self.unique_id_counter, model=self)
+        self.schedule.add(self.policy_maker)
+
         # Data collection setup to collect data
         model_metrics = {
                         "total_adapted_households": self.total_adapted_households,
@@ -118,14 +122,6 @@ class AdaptationModel(Model):
                         }
         #set up the data collector 
         self.datacollector = DataCollector(model_reporters=model_metrics, agent_reporters=agent_metrics)
-
-        #initialise policy values
-        self.provide_information = 0.5
-        self.subsidies = 0.5
-        self.regulation = 0.5
-        self.infrastructure_government = 0.5
-
-            
 
     def initialize_network(self):
         """
@@ -252,7 +248,7 @@ class AdaptationModel(Model):
                     agent.flood_depth_actual = random.uniform(0.5, 1.2) * agent.flood_depth_estimated
                     # calculate the actual flood damage given the actual flood depth
                     agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual, agent.sandbags_placed, self.waterboard.adaptation_on_rivers_and_drainages,
-                                                                             self.government.warning_system, self.infrastructure_government)
+                                                                             self.government.warning_system, self.policy_maker.infrastructure_government)
 
         # randomly determine if a protest takes place this step, value 0 or 1
         self.protest = random.randint(0,1)
@@ -270,7 +266,7 @@ class AdaptationModel(Model):
                 self.political_perception_government = agent.political_perception_government
                 self.government_budget = agent.government_budget
             if type(agent) == Waterboard:
-                self.waterboard_attitude = agent.waterboard_attitude'''
+                self.waterboard_attitude = agent.waterboard_attitude
 
         self.provide_information = (self.provide_information + 0.1*self.government.government_budget +
                                     0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.7
@@ -279,4 +275,4 @@ class AdaptationModel(Model):
         self.regulation = (self.regulation + 0.05*self.government.government_budget + 0.2*self.government.political_perception_government +
                            0.05*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.4
         self.infrastructure_government = (self.infrastructure_government + 0.4*self.government.government_budget +
-                                          0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude)/1.9
+                                          0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude)/1.9'''
