@@ -159,8 +159,16 @@ def calculate_basic_flood_damage(flood_depth, sandbags_household, waterboard_ada
     elif flood_depth < 0.025:
         flood_damage = 0
     else:
+        # determine input used to compute damages, which is a variation of only using flood_depth as input
+        input_damages = flood_depth - (0.05 * sandbags_household) - (0.15 * waterboard_adaptation)
+        - (0.08 * warning_system_government) - (0.3 * infrastructure)
+        #as with the standard formula, when the input into the logarithm is below 0.025, we manually set the flood damages to 0 and return this as output
+        if input_damages <= 0.025:
+            flood_damage = 0
+            return flood_damage
+            #exit()
         # see flood_damage.xlsx for function generation
         #flood_damage = 0.1746 * math.log(flood_depth) + 0.6483
-        flood_damage = 0.1746 * math.log(flood_depth) + 0.6483
+        flood_damage = 0.1746 * math.log(input_damages) + 0.6483
     return flood_damage
 

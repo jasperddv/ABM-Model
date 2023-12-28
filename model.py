@@ -251,7 +251,7 @@ class AdaptationModel(Model):
                     # Calculate the actual flood depth as a random number between 0.5 and 1.2 times the estimated flood depth
                     agent.flood_depth_actual = random.uniform(0.5, 1.2) * agent.flood_depth_estimated
                     # calculate the actual flood damage given the actual flood depth
-                    agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual, agent.sandbags_placed, self.waterboard.waterboard_adaptation,
+                    agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual, agent.sandbags_placed, self.waterboard.adaptation_on_rivers_and_drainages,
                                                                              self.government.warning_system, self.infrastructure_government)
 
         # randomly determine if a protest takes place this step, value 0 or 1

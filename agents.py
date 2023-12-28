@@ -35,6 +35,12 @@ class Households(Agent):
         # initialise sandbags placed by household
         self.sandbags_placed = 0
 
+        # initialise for all households in a way that they do not have an insurance first
+        self.insurance_taken_by_household = 0
+
+        # determine value of house to convert flood damages to monetary damages
+        self.value_house = random.randrange(200, 1500, 1) * 1000
+
         # getting flood map values
         # Get a random location on the map
         loc_x, loc_y = generate_random_location_within_map_domain()
@@ -55,10 +61,18 @@ class Households(Agent):
             self.flood_depth_estimated = 0
         
         # calculate the estimated flood damage given the estimated flood depth. Flood damage is a factor between 0 and 1
+        #add some uncertaintity to estimation with the random factor at the end
         self.flood_damage_estimated = calculate_basic_flood_damage(flood_depth=self.flood_depth_estimated, sandbags_household=self.sandbags_placed,
                                                                    waterboard_adaptation=0,
                                                                    warning_system_government=0,
-                                                                   infrastructure=0)
+                                                                   infrastructure=0) + random.randrange(-10, 10, 1)/100
+
+        #compute estimated monetary flood damages
+        #damages are lowered by 70% if insurance is taken
+        if self.insurance_taken_by_household == 1:
+            self.monetary_damage_estimated = self.flood_damage_estimated * self.value_house * 0.3
+        else:
+            self.monetary_damage_estimated = self.flood_damage_estimated * self.value_house
 
         # Add an attribute for the actual flood depth. This is set to zero at the beginning of the simulation since there is not flood yet
         # and will update its value when there is a shock (i.e., actual flood). Shock happens at some point during the simulation
@@ -69,6 +83,13 @@ class Households(Agent):
                                                                    waterboard_adaptation=0,
                                                                    warning_system_government=0,
                                                                    infrastructure=0)
+
+        #compute actual monetary flood damages
+        #damages are lowered by 70% if insurance is taken
+        if self.insurance_taken_by_household == 1:
+            self.monetary_damage_actual = self.flood_damage_actual * self.value_house * 0.3
+        else:
+            self.monetary_damage_actual = self.flood_damage_actual * self.value_house
 
         # political perception of household is determined by political situation + a random value between -0.3 and 0.3.
         # If political perception value is above 1, it will be put to 1. If it is below 0, it is put to 0
@@ -143,6 +164,9 @@ class Government(Agent):
         # initialise welfare in the country
         self.welfare = welfare
 
+        # initialise warning system value
+        self.warning_system = 0
+
         #import all functions of the model to be able to use them in Government
         self.main_model = model
 
@@ -189,12 +213,18 @@ class Waterboard(Agent):
         #import all functions of the model to be able to use them in Insurance company
         self.main_model = model
 
+        #initialise by giving value 0
+        self.adaptation_on_rivers_and_drainages = 0
+
         # Add an attribute for the actual flood depth. This is set to zero at the beginning of the simulation since there is not flood yet
         # and will update its value when there is a shock (i.e., actual flood). Shock happens at some point during the simulation
         self.flood_depth_actual = 0
 
         # calculate the actual flood damage given the actual flood depth. Flood damage is a factor between 0 and 1
-        self.flood_damage_actual = calculate_basic_flood_damage(flood_depth=self.flood_depth_actual)
+        self.flood_damage_actual = calculate_basic_flood_damage(flood_depth=self.flood_depth_actual, sandbags_household=0,
+                                                                   waterboard_adaptation=self.adaptation_on_rivers_and_drainages,
+                                                                   warning_system_government=0.5,
+                                                                   infrastructure=0.5)
 
         #create list that contains flood damage over the past years, used to create household attitude
         self.past_flood_damages = [0, 0, 0, 0]
@@ -211,8 +241,20 @@ class Waterboard(Agent):
         return len(friends)
 
     def step(self):
-        #append past_flood_damages list with the new actual flood damage
-        self.past_flood_damages.append(self.flood_damage_actual)
+        #initialise to 0
+        self.household_average_flood_damage = 0
+        #get average flood damage of households
+        for agent in self.main_model.schedule.agents:
+            # only execute code for households
+            if type(agent) == Households:
+                self.household_average_flood_damage = self.household_average_flood_damage + calculate_basic_flood_damage(agent.flood_depth_actual,
+                                                                         agent.sandbags_placed,
+                                                                         self.adaptation_on_rivers_and_drainages,
+                                                                         self.main_model.government.warning_system,
+                                                                         self.main_model.infrastructure_government)
+        self.household_average_flood_damage = self.household_average_flood_damage / self.main_model.number_of_households
+        # append past_flood_damages list with the new actual flood damage
+        self.past_flood_damages.append(self.household_average_flood_damage)
 
         #determine attitude of waterboard based upon past flood damages. The waterboard always has an attitude of at least 0.5
         self.waterboard_attitude = (5 + sum(self.past_flood_damages[-5:])) / 10
