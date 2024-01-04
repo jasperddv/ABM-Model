@@ -180,8 +180,10 @@ class Households(Agent):
 
         # Logic for adaptation based on estimated flood damage and a random chance.
         # These conditions are examples and should be refined for real-world applications.
-        if self.sandbags_placed > 9:
+        if self.sandbags_placed > 6:
             self.is_adapted = True  # Agent adapts to flooding
+        else:
+            self.is_adapted = False   # Agent is not adapted anymore
 
         # append past_flood_damages list with the new actual flood damage
         self.past_flood_damages.append(self.flood_damage_actual)
@@ -349,10 +351,10 @@ class Policy_maker(Agent):
         return (provide_information + 0.1*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/1.7
 
     def determine_subsidies(self, government_budget, subsidies, political_perception_government, waterboard_attitude, protest):
-        return government_budget*(subsidies + 0.3*political_perception_government + 0.2*waterboard_attitude + protest)
+        return government_budget*(subsidies + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/3
 
     def determine_regulation(self, regulation, government_budget, political_perception_government, waterboard_attitude, protest):
-        return (regulation + government_budget + 0.2*political_perception_government + 0.05*waterboard_attitude + 0.1*protest)/1.4
+        return (regulation + 0.05*government_budget + 0.2*political_perception_government + 0.05*waterboard_attitude + 0.1*protest)/1.4
 
     def determine_infrastructure_government(self, infrastructure_government, government_budget, political_perception_government, waterboard_attitude):
         return (infrastructure_government + 0.4*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude)/1.9
