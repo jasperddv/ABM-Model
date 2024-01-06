@@ -39,6 +39,7 @@ class AdaptationModel(Model):
                  number_of_edges = 3,
                  # number of nearest neighbours for WS social network
                  number_of_nearest_neighbours = 5,
+                 political_situation = 5,
                  ):
         
         super().__init__(seed = seed)
@@ -67,8 +68,13 @@ class AdaptationModel(Model):
         # set schedule for agents
         self.schedule = SimultaneousActivation(self)  # Schedule for activating agents
 
-        # generate random value between 0 and 1 for political situation
-        self.political_situation = random.random()
+        # check if political_situation has correct value (between 0 and 1) as input
+        if political_situation > 1 or political_situation < 0:
+            # if not, generate random value between 0 and 1 for political situation
+            self.political_situation = random.random()
+        else:
+            #copy input value to model value
+            self.political_situation = political_situation
 
         # generate a random binary value for welfare
         self.welfare = random.randint(0,1)
@@ -107,6 +113,10 @@ class AdaptationModel(Model):
         # Data collection setup to collect data
         model_metrics = {
                         "total_adapted_households": self.total_adapted_households,
+                        "provide_information": self.provide_information,
+                        "subsidies": self.subsidies,
+                        "regulation": self.regulation,
+                        "infrastructure_government": self.infrastructure_government
                         # ... other reporters ...
                         }
         
@@ -118,6 +128,7 @@ class AdaptationModel(Model):
                         "IsAdapted": "is_adapted",
                         "FriendsCount": lambda a: a.count_friends(radius=1),
                         "location":"location",
+                        "SandbagsPlaced":"sandbags_placed"
                         # ... other reporters ...
                         }
         #set up the data collector 
@@ -179,6 +190,18 @@ class AdaptationModel(Model):
         #BE CAREFUL THAT YOU MAY HAVE DIFFERENT AGENT TYPES SO YOU NEED TO FIRST CHECK IF THE AGENT IS ACTUALLY A HOUSEHOLD AGENT USING "ISINSTANCE"
         adapted_count = sum([1 for agent in self.schedule.agents if isinstance(agent, Households) and agent.is_adapted])
         return adapted_count
+
+    def provide_information(self):
+        return self.policy_maker.provide_information
+
+    def subsidies(self):
+        return self.policy_maker.subsidies
+
+    def regulation(self):
+        return self.policy_maker.regulation
+
+    def infrastructure_government(self):
+        return self.policy_maker.infrastructure_government
     
     def plot_model_domain_with_agents(self):
         fig, ax = plt.subplots()
@@ -231,15 +254,7 @@ class AdaptationModel(Model):
         assume local flooding instead of global flooding). The actual flood depth can be 
         estimated differently
         """
-        #print(self.waterboard.adaptation_on_rivers_and_drainages)
-###     for agent in self.schedule.agents:
-            #only execute code for households
-            #if type(agent) == Government:
-                #sum all political perceptions
-            #    self.political_perception_government = agent.political_perception_government
-            #    self.government_budget = agent.government_budget
-            #if type(agent) == Waterboard:
-            #    self.waterboard_adaptation = agent.adaptation_on_rivers_and_drainages
+
         if self.schedule.steps == 5:
             for agent in self.schedule.agents:
                 # only execute code for households
@@ -257,22 +272,4 @@ class AdaptationModel(Model):
         self.datacollector.collect(self)
         self.schedule.step()
 
-        # determine new policy values
-        '''
-        for agent in self.schedule.agents:
-            #only execute code for households
-            if type(agent) == Government:
-                #sum all political perceptions
-                self.political_perception_government = agent.political_perception_government
-                self.government_budget = agent.government_budget
-            if type(agent) == Waterboard:
-                self.waterboard_attitude = agent.waterboard_attitude
 
-        self.provide_information = (self.provide_information + 0.1*self.government.government_budget +
-                                    0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.7
-        self.subsidies = self.government.government_budget*(self.subsidies + 0.3*self.government.political_perception_government +
-                                                 0.2*self.waterboard.waterboard_attitude + self.protest)
-        self.regulation = (self.regulation + 0.05*self.government.government_budget + 0.2*self.government.political_perception_government +
-                           0.05*self.waterboard.waterboard_attitude + 0.1*self.protest)/1.4
-        self.infrastructure_government = (self.infrastructure_government + 0.4*self.government.government_budget +
-                                          0.3*self.government.political_perception_government + 0.2*self.waterboard.waterboard_attitude)/1.9'''

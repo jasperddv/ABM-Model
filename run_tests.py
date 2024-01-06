@@ -1,10 +1,16 @@
+import pandas as pd
 from model import AdaptationModel
 import matplotlib.pyplot as plt
 import networkx as nx
 from agents import Households, Government, Waterboard, Insurance_company, Policy_maker
+import random
+import mesa
+
+# set random seed
+random.seed(1)
 
 # Initialize the Adaptation Model with 50 household agents.
-model = AdaptationModel(number_of_households=50, flood_map_choice="harvey", network="watts_strogatz") # flood_map_choice can be "harvey", "100yr", or "500yr"
+'''model = AdaptationModel(number_of_households=50, flood_map_choice="harvey", network="watts_strogatz") # flood_map_choice can be "harvey", "100yr", or "500yr"
 
 # Calculate positions of nodes for the network plot.
 # The spring_layout function positions nodes using a force-directed algorithm,
@@ -40,8 +46,34 @@ model.plot_model_domain_with_agents()
 # Plot the initial state of the social network.
 fig, ax = plt.subplots(figsize=(7, 7))
 plot_network(ax, model)
-#plt.show()
+#plt.show()'''
 
+# create experimental setup
+# start by creating dictionary for parameters
+experiment1_parameters = {'political_situation': [0.15, 0.85]}
+
+#define function for experiment running
+def experimental_setup_1(flooding_model):
+    batch = mesa.batchrunner.batch_run(model_cls = flooding_model, parameters = experiment1_parameters,
+                                       number_processes = 1, iterations = 5, data_collection_period = 1,
+                                       display_progress=True)
+    #import data from run
+    br_df = pd.DataFrame(batch)
+
+    #print some values
+    print(br_df.keys())
+    print(br_df.head(10))
+    print(br_df.tail(10))
+    print(br_df["provide_information"])
+
+    #export to CSV value, to be opened in Excel
+    br_df.to_csv("Test")
+
+
+# run experimental setup
+experimental_setup_1(AdaptationModel)
+
+'''
 # Run the model for 20 steps and generate plots every 5 steps.
 for step in range(20):
     model.step()
@@ -62,4 +94,4 @@ agent_data = model.datacollector.get_agent_vars_dataframe()
 print(agent_data)
 
 model_data = model.datacollector.get_model_vars_dataframe()
-print(model_data)
+print(model_data)'''
