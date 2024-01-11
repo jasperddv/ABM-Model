@@ -50,21 +50,22 @@ plot_network(ax, model)
 
 # create experimental setup
 # start by creating dictionary for parameters
-experiment1_parameters = {'political_situation': [0.15, 0.85]}
+random_political_situation = random.random()
+experiment1_parameters = {"political_situation" : random_political_situation}
 
 #define function for experiment running
 def experimental_setup_1(flooding_model):
     batch = mesa.batchrunner.batch_run(model_cls = flooding_model, parameters = experiment1_parameters,
-                                       number_processes = 1, iterations = 5, data_collection_period = 1,
+                                       number_processes = 1, iterations = 5, max_steps = 19,data_collection_period = 1,
                                        display_progress=True)
     #import data from run
     br_df = pd.DataFrame(batch)
 
     #print some values
-    print(br_df.keys())
-    print(br_df.head(10))
-    print(br_df.tail(10))
-    print(br_df["provide_information"])
+    #print(br_df.keys())
+    #print(br_df.head(10))
+    #print(br_df.tail(10))
+    #print(br_df["provide_information"])
 
     #export to CSV value, to be opened in Excel
     br_df.to_csv("Test")

@@ -110,11 +110,11 @@ class Households(Agent):
         return len(self.friends)
 
     def step(self):
-        #compute household attitude using the average value of the last 5 values past_flood_damages list
-        self.household_attitude = sum(self.past_flood_damages[-5:])/5
+        #compute household attitude using the average value of the last 3 values past_flood_damages list
+        self.household_attitude = sum(self.past_flood_damages[-3:])/3
 
         #determine savings of household
-        self.savings_household = 2000 + self.welfare*1000*random.randint(0,10)
+        self.savings_household = 1 #2000 + self.welfare*1000*random.randint(0,10)
 
         #create list with political perception of neighbours
         self.friends_political_perceptions_neighbours = []
@@ -173,10 +173,19 @@ class Households(Agent):
         else:
             self.insurance_taken_by_household = 1
 
+        # append past_flood_damages list with the new actual flood damage
+        self.past_flood_damages.append(self.flood_damage_actual)
+
+        # compute household attitude using the average value of the last 3 values past_flood_damages list
+        self.household_attitude = sum(self.past_flood_damages[-3:]) / 3
+
         #determine sandbags placed by household
         self.sandbags_placed = (2*self.main_model.policy_maker.provide_information + 3*self.main_model.policy_maker.subsidies + 2*self.main_model.policy_maker.regulation -
                                 5*self.main_model.policy_maker.infrastructure_government - 3*self.insurance_taken_by_household +
                                 1*self.savings_household/1000 + 3*self.household_attitude)
+
+        if self.sandbags_placed < 0:
+            self.sandbags_placed = 0
 
         # Logic for adaptation based on estimated flood damage and a random chance.
         # These conditions are examples and should be refined for real-world applications.
@@ -184,9 +193,6 @@ class Households(Agent):
             self.is_adapted = True  # Agent adapts to flooding
         else:
             self.is_adapted = False   # Agent is not adapted anymore
-
-        # append past_flood_damages list with the new actual flood damage
-        self.past_flood_damages.append(self.flood_damage_actual)
 
 # Define the Government agent class
 class Government(Agent):
@@ -335,10 +341,10 @@ class Policy_maker(Agent):
         self.main_model = model
         
         # initialise policy values
-        self.provide_information = 0.5
-        self.subsidies = 0.5
-        self.regulation = 0.5
-        self.infrastructure_government = 0.5
+        self.provide_information = 0
+        self.subsidies = 0
+        self.regulation = 0
+        self.infrastructure_government = 0
 
     #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
     def count_friends(self, radius):
@@ -357,7 +363,7 @@ class Policy_maker(Agent):
         return (regulation + 0.05*government_budget + 0.2*political_perception_government + 0.05*waterboard_attitude + 0.1*protest)/1.4
 
     def determine_infrastructure_government(self, infrastructure_government, government_budget, political_perception_government, waterboard_attitude):
-        return (infrastructure_government + 0.4*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude)/1.9
+        return (infrastructure_government + 0.2*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude)/1.9
 
     def step(self):
         # determine new policy values

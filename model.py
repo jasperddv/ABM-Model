@@ -40,6 +40,7 @@ class AdaptationModel(Model):
                  # number of nearest neighbours for WS social network
                  number_of_nearest_neighbours = 5,
                  political_situation = 5,
+                 welfare = 5,
                  ):
         
         super().__init__(seed = seed)
@@ -76,8 +77,13 @@ class AdaptationModel(Model):
             #copy input value to model value
             self.political_situation = political_situation
 
-        # generate a random binary value for welfare
-        self.welfare = random.randint(0,1)
+        # check if welfare has correct value (between 0 and 1) as input
+        if welfare > 1 or welfare < 0:
+            # if not, generate random value between 0 and 1 for welfare
+            self.welfare = random.randint(0,1)
+        else:
+            # copy input value to model value
+            self.welfare = welfare
 
         # create households through initiating a household on each node of the network graph
         for i, node in enumerate(self.G.nodes()):
@@ -116,7 +122,8 @@ class AdaptationModel(Model):
                         "provide_information": self.provide_information,
                         "subsidies": self.subsidies,
                         "regulation": self.regulation,
-                        "infrastructure_government": self.infrastructure_government
+                        "infrastructure_government": self.infrastructure_government,
+                        "PoliticalSituation": self.determine_political_situation
                         # ... other reporters ...
                         }
         
@@ -128,7 +135,9 @@ class AdaptationModel(Model):
                         "IsAdapted": "is_adapted",
                         "FriendsCount": lambda a: a.count_friends(radius=1),
                         "location":"location",
-                        "SandbagsPlaced":"sandbags_placed"
+                        "SandbagsPlaced":"sandbags_placed",
+                        "InsuranceTaken":"insurance_taken_by_household",
+                        "HouseholdAttitude":"household_attitude"
                         # ... other reporters ...
                         }
         #set up the data collector 
@@ -202,6 +211,9 @@ class AdaptationModel(Model):
 
     def infrastructure_government(self):
         return self.policy_maker.infrastructure_government
+
+    def determine_political_situation(self):
+        return self.political_situation
     
     def plot_model_domain_with_agents(self):
         fig, ax = plt.subplots()
@@ -255,12 +267,22 @@ class AdaptationModel(Model):
         estimated differently
         """
 
-        if self.schedule.steps == 5:
-            for agent in self.schedule.agents:
-                # only execute code for households
-                if type(agent) == Households:
+
+        for agent in self.schedule.agents:
+            # only execute code for households
+            if type(agent) == Households:
+                agent.flood_depth_actual = agent.flood_depth_actual - random.uniform(0.2,
+                                                                                     0.5) * agent.flood_depth_estimated
+                if agent.flood_depth_actual < 0:
+                    agent.flood_depth_actual = 0
+                agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual,
+                                                                         agent.sandbags_placed,
+                                                                         self.waterboard.adaptation_on_rivers_and_drainages,
+                                                                         self.government.warning_system,
+                                                                         self.policy_maker.infrastructure_government)
+                if self.schedule.steps > 0 and (self.schedule.steps % 5) == 0:
                     # Calculate the actual flood depth as a random number between 0.5 and 1.2 times the estimated flood depth
-                    agent.flood_depth_actual = random.uniform(0.5, 1.2) * agent.flood_depth_estimated
+                    agent.flood_depth_actual = agent.flood_depth_actual + random.uniform(0.4, 0.9) * agent.flood_depth_estimated
                     # calculate the actual flood damage given the actual flood depth
                     agent.flood_damage_actual = calculate_basic_flood_damage(agent.flood_depth_actual, agent.sandbags_placed, self.waterboard.adaptation_on_rivers_and_drainages,
                                                                              self.government.warning_system, self.policy_maker.infrastructure_government)
