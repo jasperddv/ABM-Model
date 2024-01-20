@@ -16,6 +16,7 @@ from agents import Households, Government, Waterboard, Insurance_company, Policy
 from functions import get_flood_map_data, calculate_basic_flood_damage
 from functions import map_domain_gdf, floodplain_gdf
 
+#from run_tests import ScenarioNO
 
 # Define the AdaptationModel class
 class AdaptationModel(Model):
@@ -41,6 +42,7 @@ class AdaptationModel(Model):
                  number_of_nearest_neighbours = 5,
                  political_situation = 5,
                  welfare = 5,
+                 scenarioNO = 0,
                  ):
         
         super().__init__(seed = seed)
@@ -84,6 +86,9 @@ class AdaptationModel(Model):
         else:
             # copy input value to model value
             self.welfare = welfare
+
+        # give scenario number as value to model
+        self.scenarioNO = scenarioNO
 
         # create households through initiating a household on each node of the network graph
         for i, node in enumerate(self.G.nodes()):
@@ -238,7 +243,7 @@ class AdaptationModel(Model):
         plt.title(f'Model Domain with Agents at Step {self.schedule.steps}')
         plt.xlabel('Longitude')
         plt.ylabel('Latitude')
-        #plt.show()
+        plt.show()
 
     def determine_average_political_perception_households(self):
         #function used to determine the average political perception of the households

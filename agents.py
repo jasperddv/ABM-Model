@@ -8,7 +8,6 @@ from shapely import contains_xy
 # Import functions from functions.py
 from functions import generate_random_location_within_map_domain, get_flood_depth, calculate_basic_flood_damage, floodplain_multipolygon
 
-
 # Define the Households agent class
 class Households(Agent):
     """
@@ -241,7 +240,10 @@ class Government(Agent):
         self.political_perception_government = self.determine_political_perception_government(self.political_perception_government, self.average_political_perception_households)
 
         # determine government budget based upon welfare and political perception of the government
-        self.government_budget = 0.6*self.welfare + 1.4*self.political_perception_government
+        if self.main_model.scenarioNO == 3:
+            self.government_budget = 1.4*self.welfare + 0.6*self.political_perception_government
+        else:
+            self.government_budget = 0.6*self.welfare + 1.4*self.political_perception_government
 
     def advance(self):
         # determine whether government uses a warning system
@@ -341,10 +343,10 @@ class Policy_maker(Agent):
         self.main_model = model
         
         # initialise policy values
-        self.provide_information = 0
-        self.subsidies = 0
-        self.regulation = 0
-        self.infrastructure_government = 0
+        self.provide_information = 0.5
+        self.subsidies = 0.5
+        self.regulation = 0.5
+        self.infrastructure_government = 0.5
 
     #added this to ensure 'agent_metrics' works in model.py. Else FriendsCount does not work in the metrics
     def count_friends(self, radius):
@@ -354,16 +356,28 @@ class Policy_maker(Agent):
         return len(friends)
 
     def determine_provide_information(self, provide_information, government_budget, political_perception_government, waterboard_attitude, protest):
-        return (provide_information + 0.1*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/1.7
+        if self.main_model.scenarioNO == 4:
+            return (0.1*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/0.7
+        else:
+            return (provide_information + 0.1 * government_budget + 0.3 * political_perception_government + 0.2 * waterboard_attitude + 0.1 * protest) / 1.7
 
     def determine_subsidies(self, government_budget, subsidies, political_perception_government, waterboard_attitude, protest):
-        return government_budget*(subsidies + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/3
+        if self.main_model.scenarioNO == 4:
+            return government_budget * (0.3 * political_perception_government + 0.2 * waterboard_attitude + 0.1 * protest) / 2
+        else:
+            return government_budget*(subsidies + 0.3*political_perception_government + 0.2*waterboard_attitude + 0.1*protest)/3
 
     def determine_regulation(self, regulation, government_budget, political_perception_government, waterboard_attitude, protest):
-        return (regulation + 0.05*government_budget + 0.2*political_perception_government + 0.05*waterboard_attitude + 0.1*protest)/1.4
+        if self.main_model.scenarioNO == 4:
+            return (0.05 * government_budget + 0.2 * political_perception_government + 0.05 * waterboard_attitude + 0.1 * protest) / 0.4
+        else:
+            return (regulation + 0.05*government_budget + 0.2*political_perception_government + 0.05*waterboard_attitude + 0.1*protest)/1.4
 
     def determine_infrastructure_government(self, infrastructure_government, government_budget, political_perception_government, waterboard_attitude):
-        return (infrastructure_government + 0.2*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude)/1.9
+        if self.main_model.scenarioNO == 4:
+            return (0.2 * government_budget + 0.3 * political_perception_government + 0.2 * waterboard_attitude) / 0.9
+        else:
+            return (infrastructure_government + 0.2*government_budget + 0.3*political_perception_government + 0.2*waterboard_attitude)/1.9
 
     def step(self):
         # determine new policy values
