@@ -339,7 +339,7 @@ class Policy_maker(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 
-        #import all functions of the model to be able to use them in Insurance company
+        #import all functions of the model to be able to use them in policy maker
         self.main_model = model
         
         # initialise policy values

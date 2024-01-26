@@ -205,18 +205,23 @@ class AdaptationModel(Model):
         adapted_count = sum([1 for agent in self.schedule.agents if isinstance(agent, Households) and agent.is_adapted])
         return adapted_count
 
+    #here, the policy maker is called to determine the new value of provide_information
     def provide_information(self):
         return self.policy_maker.provide_information
 
+    #here, the policy maker is called to determine the new value of subsidies
     def subsidies(self):
         return self.policy_maker.subsidies
 
+    #here, the policy maker is called to determine the new value of regulation
     def regulation(self):
         return self.policy_maker.regulation
 
+    #here, the policy maker is called to determine the new value of infrastructure government
     def infrastructure_government(self):
         return self.policy_maker.infrastructure_government
 
+    #here, the new political situation is determined
     def determine_political_situation(self):
         return self.political_situation
     
